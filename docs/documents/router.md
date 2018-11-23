@@ -6,188 +6,136 @@
 
 特性:
 
- - [x] 路由快速查找
+ - 路由快速查找
 
- - [x] 动态路由传参
+ - 动态路由传参
 
- - [x] 子路由支持(路由组)
+ - 子路由支持(路由组)
 
- - [x] 中间件支持
+ - 中间件支持
+
 
 `bingo-router` 基于 [httprouter](https://github.com/julienschmidt/httprouter) , 性能强劲， `httprouter` 拥有的特性，`bingo-router`也有，并且参考 [Laravel](https://github.com/laravel/laravel) 的 [Pipeline](https://laravel-china.org/articles/2769/laravel-pipeline-realization-of-the-principle-of-single-component) 功能，为 `bingo-router` 添加中间件支持，可以快速实现拦截器等常见功能
 
-后续准备加入的功能
+> 如果希望单独使用路由模块，请查看 `bingo-router` 的 [使用文档](https://github.com/silsuer/bingo-router)
 
- -  会话管理
+## 启动过程
 
- -  路由跳转
+在讲解如何使用路由之前，我们需要看一下，`bingo-router` 的组成和启动过程:
 
- -  服务的平滑重启和关闭
+1. 在项目的`main.go` 文件中，可以看见项目的初始化过程，首先使用 `NewApp()`函数，创建一个应用实例
 
- -  工具方法补充(e.g.封装json返回等方法)
+   ```
+   app := core.NewApp(p + "/.env.yml")
+   ```
+
+   应用结构体中，包含一个 `Cli`字段和一个 `Router` 字段，其中 `Cli` 字段用来处理自定义的项目命令，`Router`字段就是 `bingo-router`包中的路由器 `Router` 了
+
+2. 在应用实例的路由器字段上挂载外部路由
+
+   ```
+   app.Router.Mount(routes.Api())
+   ```
+
+   其中，`routes.Api()` 就是我们在`routes/api.go` 文件中 `Api()` 函数中返回的路由,
+
+   默认的 `Api()` 方法返回的是一个空的单一路由，通过子路由的方式挂载多个路由，子路由的使用方式会在下面介绍
+
+3. 从 `Cli` 字段中加载定义的命令
+
+   ```
+   app.Cli.Run(os.Args)
+   ```
+
+   `bingo`的命令注册使用了 [urfave/cli](https://github.com/urfave/cli),提供了`Run()`方法用来传入命令行的参数
+   
+   在最开始`NewApp()` 的时候，添加了两个最基本的命令，可以进入 `core/core.go` 文件中查看源代码，添加了`run`,`sword`两个最基本的命令,
+
+   而 `run` 命令就是启动监听端口服务的方法了,`sword` 用处下面会讲到，稍安勿躁...
+
+4. 此时使用 `go build` 构建完项目后（例如项目名叫 `demo` ）
+
+   然后在当前目录下将出现一个`demo`文件，这就是构建好的项目文件了,
+
+   执行 `./demo run`
+
+   就会启动一个进程来监听`.env.yaml`中指定的端口了（默认是`8080`）
+
+
+5. 上面就是整个的项目启动过程，所以当我们要添加路由文件或者改造项目的时候，就可以直接更改源代码了
+
+## 组成
+
+  上面讲到的 `Router` 路由器结构体，是由多个 `Route`结构体组成的，而每存在一个 `Route`,就代表存在一个`URL`路由,
+
+  `Route` 结构体中的所有方法，都可以使用链式操作，例如:
+
+  |方法          | 备注  |
+  |-----------|------ |
+  |Get()             | 将当前路由 `method` 设置为 `GET`                                         |
+  |Post()            | 将当前路由 `method` 设置为 `POST`                                        |
+  |Patch()           | 将当前路由 `method` 设置为 `PATCH`                                       |
+  |Put()             | 将当前路由 `method` 设置为 `PUT`                                         |
+  |Delete()          | 将当前路由 `method` 设置为 `DELETE`                                      |
+  |Request()         | 为当前路由设置路径和目标函数                                               |
+  |Target()          | 将当前路由的 `targetMethod` 设置为一个函数                                 |
+  |Middleware()      | 为当前路由添加一个中间件                                                  |
+  |MiddlewareGroup() | 为当前路由添加一个中间件组                                                 |
+  |Mount()           | 为当前路由添加子路由                                                      |
+  |Name()            | 为当前路由设定一个名字                                                    |
+  |Prefix()          | 为当前路由的所有子路由添加路由前缀                                          |
+  |Resource()        | 为当前路由添加一组兼容 `RESTFUL API` 的子路由（目前还有一些问题，正式版会解决）  |
+
 
 
 ## 使用
 
-> 如果希望单独使用路由模块，请查看 `bingo-router` 的 [使用文档](https://github.com/silsuer/bingo-router)
-
-对于使用 `bingo` 工具创建的项目:
+#### 添加路由
 
 
-## 扩展
+1. 方式1: 通过匿名函数添加
 
-#### 创建新的路由文件
+   将 `routes/api.go` 文件中的`Api()`函数，改为如下代码:
 
+   ```
+      func Api() *bingo_router.Route {
+       	return bingo_router.NewRoute().Get("/").Target(func(c *bingo_router.Context) {
+		         c.String("hello world!")
+	      })
+     }
+   ```
 
+   首先使用 `NewRoute()` 方法新建一个 `Route`,然后使用 `Get()`和 `Target()` 方法设定路径和目标函数，例如上述代码，
 
-1. 初始化路由器对象 `router`:
+   使用 `bingo run dev` 或 `make run` 命令启动服务后，浏览器访问 `http://localhost:8080/`,可以看到浏览器打印出了
 
- ```go
-   	// 创建一个路由器
-   	router := bingo_router.New()
- ```
+   `hello world!`
 
- 路由器 `Router` 上挂载路由 `Route`，一个服务只能存在一个 `Router`，可存在多个`Route`，不要弄混
+2. 方式2: 通过控制器添加
 
-2. 创建路由
+   首先看一下控制器的组成,在项目根目录下输入 `bingo sword make:controller example_controller`,在 `http/controllers`目录下将会出现一个 `example_controller` 文件:
 
- ```go
-   route := bingo_router.NewRoute().Get("/").Target(func(c *bingo_router.Context) {
-   		fmt.Fprint(c.Writer,"hello! bingo-router!")
-   	})
- ```
+添加路由
+1. 匿名函数添加
+2. 控制器添加
 
- 目前上下文对象`context`只是对 `httprouter` 中对象的一个简单封装,用法与 `httprouter` 完全一致:
+获取路由参数
+获取method传过来的参数
 
- ```go
-   type Context struct {
-   	Writer  http.ResponseWriter // 响应
-   	Request *http.Request       // 请求
-   	Params  Params              //参数
-   }
- ```
-
- `NewRoute` 方法将会返回一个路由指针，可以调用:
-
- - `Get()` 方法，设定为Get方法
-
- - `Post()` 方法，设定为Get方法
-
- - `Patch()` 方法，设定为Get方法
-
- - `Put()` 方法，设定为Get方法
-
- - `Delete()` 方法，设定为Get方法
-
- - `Handle()` 方法，设定为Get方法
-
- - `Target()` 方法，指定该路由所对应的方法
-
- - `Middleware()` 方法，设定一个将在其中设置的中间件
-
- - `MiddlewareGroup()` 方法，批量设置中间件
-
- - `Prefix()` 方法，设置路由前缀，该前缀将对该路由的所有子路由有效，对当前路由无效
-
- - `Mount()` 方法，设置子路由
-
-3. 将路由挂载到路由器中
-
- ```go
-   router.Mount(route)
- ```
-
- 路由器 `Router` 的
-
-4. 开启服务器
-
- ```go
-   http.ListenAndServe(":8080", r)
- ```
-
-5. 在浏览器中访问 `http://localhost:8080`, 可以看到输出 `hello, bingo-router!`
-
-## 进阶
-
-### 1. 使用中间件
-
-  使用 `NewRoute()` 方法之后将会获得一个 `Route` 对象指针，采用责任链模式，随意进行链式操作:
-
-  ```go
-
-	r2 := bingo_router.NewRoute().Get("/test").Middleware(func(c *bingo_router.Context, next func(c *bingo_router.Context)) {
-		fmt.Fprint(c.Writer,"middleware")
-		next(c)
-	}).Target(func(c *bingo_router.Context) {
-		fmt.Fprintln(c.Writer,"target")
-	})
-
-  ```
-
-  中间件是一种 `MiddlewareHandle` 类型的方法 `func(c *Context, next func(c *Context))`
-
-  `Middleware` 方法传入一个回调函数，该函数接受两个参数，第一个参数`context` 是上下文，是封装的`http.ResponseWriter`,`*http.Request`和`httprouter.Params`
-
-  第二个参数是 `next` 方法，用来指定何时跳入下一个中间件，主要是用来实现前置中间件和后置中间件功能，当执行 `next` 方法后，将会跳入下一个中间件，直到所有中间件运行完毕后，才会继续执行下面的代码
-
-  例如，上面的`r2`的效果是输出:
-
-  ```
-    middleware
-    target
-  ```
-
-  如果将中间件中的`next()` 方法向上提一行的话:
-
-  ```go
-      r2 := bingo_router.NewRoute().Get("/test").Middleware(func(c *bingo_router.Context, next func(c *bingo_router.Context)) {
-            next(c)
-            fmt.Fprint(c.Writer,"middleware")
-        }).Target(func(c *bingo_router.Context) {
-            fmt.Fprintln(c.Writer,"target")
-        })
-  ```
-  这样将会输出:
-
-  ```go
-     target
-     middleware
-  ```
-
-  这样就可以实现后置中间件的效果了，可以做一些访问完控制器方法之后的后续工作
-
-  当然，如果不在中间件中调用 `next()` 方法，请求就将在这个中间件中终止。
+中间件
+1. 介绍
+2. 使用
 
 
-### 2. 使用中间件组
-
-  `Route` 对象的 `MiddlewareGroup()` 方法可以实现批量注册中间件的功能，传入一个 `MiddlwareHandle` 的数组即可，不再赘述
-
-### 3. 使用子路由和路由前缀
-
-  在 `Laravel` 中，我们经常会用到路由组的概念，可以方便的进行整体控制，在 `bingo-router` 中，我也实现了这样的功能，但是`bingo-router`中没有路由组的概念，可以使用子路由实现类似效果,
-
-  调用 `Route` 对象的 `Mount` 方法添加子路由:
-
-  ```go
-
-    bingo_router.NewRoute().Prefix("/api").Middleware(MiddlewareFunction).Mount(func(b *bingo_router.Builder) {
-    		b.NewRoute().Get("/mount").Target(func(c *bingo_router.Context) {
-    			fmt.Fprint(c.Writer, "hello mount")
-    		})
-
-    		b.NewRoute().Get("/mount2").Target(func(c *bingo_router.Context) {
-                			fmt.Fprint(c.Writer, "hello mount2")
-            })
-    	})
-  ```
-  `Prefix` 方法，传入一个字符串，这个字符串将作用在所有子路由路径前，例如上面的代码，我们最终的访问路径就是 `/api/mount`和`/api/mount2`
-
-  `Mount` 方法传入一个 `Builder` 指针，我们可以调用 `Builder`对象的 `NewRoute()` 方法为当前路由添加子路由,例如上面的代码，我们在访问 `/api/mount`和`/api/mount2`时都会经过我们指定的`MiddlewareFunction` 中间件
 
 
-> 这个包还没有完全开发完成，后续会继续补充，也会在这两天内内置到 [Bingo](https://github.com/silsuer/bingo) 框架中
 
-> 请大家多多关注主框架 [Bingo](https://github.com/silsuer/bingo) , 欢迎 STAR 、 PR
+
+
+## 扩展应用
+
+子路由
+路由前缀
+中间件组
 
 
