@@ -193,3 +193,11 @@
   - `Resource` 方法结合控制器来批量添加路由
   - 设置路由名称
   - 添加一个方法可以打印出所有路由列表
+
+### 2018-11-24 更新
+
+  - 添加`make:controller`/`make:command`/`make:middleware`等命令
+
+  - 修复部分bug
+
+  - 完善文档

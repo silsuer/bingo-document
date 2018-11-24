@@ -11,10 +11,18 @@
 * [脚手架](tool.md)
 
 * [路由控制](router.md)
+  
+  * [启动过程](router.md#启动过程)
 
-* [表单操作](installation.md)
+  * [组成](router.md#组成)
 
-* [响应](installation.md)
+  * [路由使用](router.md#使用)
+
+  * [扩展使用](router.md#扩展应用)
+
+* [表单操作](form.md)
+
+* [响应](response.md)
 
 ### 番外篇
 
