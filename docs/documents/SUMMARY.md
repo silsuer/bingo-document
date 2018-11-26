@@ -20,6 +20,8 @@
 
   * [扩展使用](router.md#扩展应用)
 
+* [配置文件](config.md)
+
 * [表单操作](form.md)
 
 * [响应](response.md)
