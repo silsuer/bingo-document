@@ -1,7 +1,7 @@
 ---
 banner:
   name: 'Bingo Framework'
-  desc: '一个简易开源的go web 框架'
+  desc: '一个简易开源的 GO WEB 框架'
   btns: 
     - { name: '开 始', href: './documents/index.html', primary: true }
     - { name: 'Github >', href: 'https://github.com/silsuer/bingo' }
