@@ -19,7 +19,7 @@ footer:
   links:
     作者相关:
       - { name: 'Github', href: 'https://github.com/silsuer/' }
-      - { name: 'Blog', href: 'https://silsuer.github.io/' }
+      - { name: 'Blog', href: 'http://silsuer.cn' }
     Git仓库:
       - { name: 'Github', href: 'https://github.com/silsuer/bingo' }
 ---
