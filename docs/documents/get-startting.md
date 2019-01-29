@@ -22,7 +22,7 @@ bingo create demo
 ### 启动项目的开发服务器
 
 ```
-make dev
+make run
 ```
 
 `bingo` 为项目生成了一个`Makefile` 文件，并填充了一些基本的脚本进行自动化构建
