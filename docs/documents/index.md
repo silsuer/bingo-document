@@ -23,7 +23,7 @@ bingo create demo
 
 ```
 cd demo
-make dev
+make run
 ```
 
 `bingo` 为项目生成了一个`Makefile` 文件，并填充了一些基本的脚本进行自动化构建
@@ -34,9 +34,9 @@ make dev
 
 ### 访问网站
 
-在浏览器中输入`http://localhost:8080`,若安装成功，会出现一个小狮子...
+在浏览器中输入`http://localhost:8080`,若安装成功，会出现一个小狮纸...
 
-> 这个吹风扇的小狮子是我偶然间看到的，觉得很有趣就存下来了,原文章显示已开源可商用，源码链接 [codepen](https://codepen.io/Yakudoo/pen/YXxmYR)
+> 这个吹风扇的小狮纸是我偶然间看到的，觉得很有趣就存下来了,原文章显示已开源可商用，源码链接 [codepen](https://codepen.io/Yakudoo/pen/YXxmYR)
 
 ![](http://qiniu-cdn.zhiguanapp.com/a076a9134a5294317c3889506c667345)
 
